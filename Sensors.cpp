@@ -9,6 +9,8 @@ float temperature = 0.0, humidity = 0.0, pressure = 0.0;
 float scd_temp = 0.0, scd_humidity = 0.0;
 uint16_t co2_ppm = 0;
 PM25_AQI_Data pm_data;
+uint16_t previous_co2 = 0;
+uint16_t previous_pm25 = 0;
 
 void setupSensors() {
   tft.println("Initializing sensors...");
@@ -36,14 +38,14 @@ void setupSensors() {
 
 void readAllSensors() {
   pm25.read(&pm_data);
-
   temperature = bme.readTemperature();
   humidity = bme.readHumidity();
   pressure = bme.readPressure() / 101325.0F;
-
   bool dataReady = false;
   scd4x.getDataReadyStatus(dataReady);
   if (dataReady) scd4x.readMeasurement(co2_ppm, scd_temp, scd_humidity);
+  previous_co2 = co2_ppm;
+  previous_pm25 = pm_data.pm25_standard;
 
   Serial.println("--------------------");
   Serial.print("PM2.5: "); Serial.println(pm_data.pm25_standard);

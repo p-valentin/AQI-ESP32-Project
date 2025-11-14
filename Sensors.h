@@ -11,6 +11,8 @@ extern Adafruit_PM25AQI pm25;
 extern float temperature, humidity, pressure, scd_temp, scd_humidity;
 extern uint16_t co2_ppm;
 extern PM25_AQI_Data pm_data;
+extern uint16_t previous_co2;
+extern uint16_t previous_pm25;
 
 void setupSensors();
 void readAllSensors();

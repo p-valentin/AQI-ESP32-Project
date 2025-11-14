@@ -77,9 +77,5 @@ You do not need to use the USB cable again.
 2.  Under **"Network Ports,"** select **"my-aqi-monitor"**.
 3.  Click the **Upload** button to send your new code over Wi-Fi.
 
-## File Structure
-
-The project is organized into a modular file structure for easy management.
-
 ## License
 This project is licensed under the MIT License – see the [LICENSE](LICENSE) file for details.
