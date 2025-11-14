@@ -2,6 +2,7 @@
 #include "Sensors.h"
 #include "WifiManager.h"
 #include "OTAHandler.h"
+#include "TelegramBot.h"
 
 unsigned long lastSensorRead = 0;
 const long sensorInterval = 6000;
@@ -12,6 +13,7 @@ void setup() {
 
   setupDisplay();
   connectWifi();
+  setupTelegram();
   setupSensors();
   setupOTA();
 
@@ -20,10 +22,12 @@ void setup() {
 
 void loop() {
   handleOTA();
+  checkIncomingMessages();
 
   if (millis() - lastSensorRead > sensorInterval) {
     readAllSensors();
     displayAllData();
+    sendAlertNotification();
     lastSensorRead = millis();
   }
 }

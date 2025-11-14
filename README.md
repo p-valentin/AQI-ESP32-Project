@@ -67,7 +67,7 @@ Connect all three sensors to the ESP32-S3's STEMMA QT port in a daisy-chain. The
 
 Power on the device. It will automatically connect to your Wi-Fi, initialize all sensors, and start displaying data on the TFT screen.
 
-* You will receive a Telegram notification every time the values are abnormal. Notifications are rate-limited to once per hour to avoid spam.
+* You will receive a Telegram notification every time the values are abnormal. Notifications are rate-limited to once per 30 minutes to avoid spam.
 * You can send `/start` to your bot at any time to see if it's online.
 
 ### Future Updates (OTA)
