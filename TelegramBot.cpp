@@ -8,7 +8,7 @@ UniversalTelegramBot bot(BOT_TOKEN, clientSecure);
 unsigned long lastNotificationSent = 0;
 const long notificationCooldown = 3600000; 
 
-const int CO2_SPIKE_THRESHOLD = 200;
+const int CO2_SPIKE_THRESHOLD = 2000;
 const int PM25_SPIKE_THRESHOLD = 15;
 
 void setupTelegram() {
@@ -84,7 +84,7 @@ void sendAlertNotification() {
     alertMessage += "💨 CO2 is high: " + String(co2_ppm) + " ppm\n";
   }
   if (pm_data.pm25_standard > 12 && alertMessage.indexOf("PM2.5") == -1) {
-    alertMessage += "🔥 PM2.5 is moderate: " + String(pm_data.pm25_standard) + " ug/m3\n";
+    alertMessage += "🔥 PM2.5 is high: " + String(pm_data.pm25_standard) + " ug/m3\n";
   }
 
   if (alertMessage != "") {

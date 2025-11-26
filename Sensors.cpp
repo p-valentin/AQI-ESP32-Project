@@ -38,7 +38,7 @@ void setupSensors() {
 
 void readAllSensors() {
   pm25.read(&pm_data);
-  temperature = bme.readTemperature();
+  temperature = bme.readTemperature() - 8.0;
   humidity = bme.readHumidity();
   pressure = bme.readPressure() / 101325.0F;
   bool dataReady = false;
