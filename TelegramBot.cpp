@@ -6,10 +6,14 @@ WiFiClientSecure clientSecure;
 UniversalTelegramBot bot(BOT_TOKEN, clientSecure);
 
 unsigned long lastNotificationSent = 0;
-const long notificationCooldown = 3600000; 
+const long standardCooldown = 3600000; 
+const long criticalCooldown = 30000;   
 
-const int CO2_SPIKE_THRESHOLD = 2000;
-const int PM25_SPIKE_THRESHOLD = 15;
+const int CO2_SPIKE_THRESHOLD = 500;
+const int PM25_SPIKE_THRESHOLD = 20;
+
+uint16_t co2History[5] = {0, 0, 0, 0, 0};
+uint16_t pm25History[5] = {0, 0, 0, 0, 0};
 
 void setupTelegram() {
   clientSecure.setCACert(TELEGRAM_CERTIFICATE_ROOT);
@@ -52,50 +56,73 @@ void checkIncomingMessages() {
 }
 
 void sendAlertNotification() {
-  if (millis() - lastNotificationSent < notificationCooldown) {
-    return;
-  }
-
+  bool isCritical = false;
   String alertMessage = "";
-  
-  if (previous_co2 != 0) { 
-    if (co2_ppm > previous_co2) {
-      int co2_diff = co2_ppm - previous_co2;
+
+  if (co2History[0] != 0) { 
+    if (co2_ppm > co2History[0]) {
+      int co2_diff = co2_ppm - co2History[0];
       if (co2_diff >= CO2_SPIKE_THRESHOLD) {
-        alertMessage += "💨 CO2 SPIKE: +" + String(co2_diff) + " ppm\n";
+        alertMessage += "💨 **RAPID CO2 SPIKE!** (+" + String(co2_diff) + " ppm)\n";
+        isCritical = true;
       }
     }
     
-    if (pm_data.pm25_standard > previous_pm25) {
-      int pm25_diff = pm_data.pm25_standard - previous_pm25;
+    if (pm_data.pm25_standard > pm25History[0]) {
+      int pm25_diff = pm_data.pm25_standard - pm25History[0];
       if (pm25_diff >= PM25_SPIKE_THRESHOLD) {
-        alertMessage += "🔥 PM2.5 SPIKE: +" + String(pm25_diff) + " ug/m3\n";
+        alertMessage += "🔥 **RAPID PM2.5 SPIKE!** (+" + String(pm25_diff) + " ug/m3)\n";
+        isCritical = true;
       }
     }
+  }
+
+  for (int i = 0; i < 4; i++) {
+    co2History[i] = co2History[i+1];
+    pm25History[i] = pm25History[i+1];
+  }
+  co2History[4] = co2_ppm;
+  pm25History[4] = pm_data.pm25_standard;
+
+  if (pm_data.pm25_standard > 35) {
+    alertMessage += "🔥 PM2.5 is VERY HIGH: " + String(pm_data.pm25_standard) + " ug/m3\n";
+    isCritical = true;
+  } else if (pm_data.pm25_standard > 12 && !isCritical) {
+    alertMessage += "⚠️ PM2.5 is moderate: " + String(pm_data.pm25_standard) + " ug/m3\n";
+  }
+
+  if (co2_ppm > 2000) {
+    alertMessage += "💨 CO2 is VERY HIGH: " + String(co2_ppm) + " ppm\n";
+    isCritical = true;
+  } else if (co2_ppm > 1000 && !isCritical) {
+    alertMessage += "⚠️ CO2 is high: " + String(co2_ppm) + " ppm\n";
   }
 
   if (temperature > 34.0 || temperature < 15.0) {
-    alertMessage += "🌡️ Temp is abnormal: " + String(temperature, 1) + "C\n";
+    alertMessage += "🌡️ Temp abnormal: " + String(temperature, 1) + "C\n";
   }
   if (humidity > 63.0 || humidity < 35.0) {
-    alertMessage += "💧 Humidity is abnormal: " + String(humidity, 1) + "%\n";
-  }
-  if (co2_ppm > 1000 && alertMessage.indexOf("CO2") == -1) {
-    alertMessage += "💨 CO2 is high: " + String(co2_ppm) + " ppm\n";
-  }
-  if (pm_data.pm25_standard > 12 && alertMessage.indexOf("PM2.5") == -1) {
-    alertMessage += "🔥 PM2.5 is high: " + String(pm_data.pm25_standard) + " ug/m3\n";
+    alertMessage += "💧 Humidity abnormal: " + String(humidity, 1) + "%\n";
   }
 
+  long currentCooldown = isCritical ? criticalCooldown : standardCooldown;
+
   if (alertMessage != "") {
-    Serial.println("Sending Telegram alert...");
-    String finalMessage = "!! ⚠️ AIR QUALITY ALERT ⚠️ !!\n" + alertMessage;
-    
-    if (bot.sendMessage(CHAT_ID, finalMessage, "")) {
-      Serial.println("Alert sent!");
-      lastNotificationSent = millis(); 
-    } else {
-      Serial.println("Alert send FAILED!");
+    if (millis() - lastNotificationSent > currentCooldown || lastNotificationSent == 0) {
+      Serial.println("Sending Telegram alert...");
+      String finalMessage = "";
+      if (isCritical) {
+        finalMessage = "‼️ 🚨 CRITICAL AIR ALERT 🚨 ‼️\n\n" + alertMessage;
+      } else {
+        finalMessage = "⚠️ Air Quality Warning ⚠️\n\n" + alertMessage;
+      }
+      
+      if (bot.sendMessage(CHAT_ID, finalMessage, "")) {
+        Serial.println("Alert sent!");
+        lastNotificationSent = millis(); 
+      } else {
+        Serial.println("Alert send FAILED!");
+      }
     }
   }
 }
