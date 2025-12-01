@@ -11,6 +11,8 @@ extern UniversalTelegramBot bot;
 
 extern unsigned long lastNotificationSent;
 extern const long notificationCooldown;
+extern unsigned long spikeStartTime;
+extern bool isSpikeActive;
 
 void setupTelegram();
 void checkIncomingMessages();
